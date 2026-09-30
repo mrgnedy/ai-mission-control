@@ -6,7 +6,7 @@ Marketplace for the Noqodi learning-loop plugin. Publish this directory as the r
 Install with:
 
 ```sh
-claude plugin marketplace add <owner>/ai-tools
+claude plugin marketplace add mrgnedy/ai-tools
 claude plugin install learning-loop@ai-tools
 ```
 
