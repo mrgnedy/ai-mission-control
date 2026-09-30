@@ -1,0 +1,7 @@
+# Optional settings for @cross-module and @cross-feature checks.
+# Copy this file to .claude/rulecheck.config and adapt it to the repository.
+# It is sourced by POSIX sh, so quote values containing spaces or quotes.
+MODULES_DIR=src/features
+IMPORT_PREFIX="import 'package:example/features/"
+SHARED_MODULES=shared,common
+ALLOWED_IMPORT_REGEX="_routes\\.dart'"

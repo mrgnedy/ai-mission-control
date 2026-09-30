@@ -1,0 +1,16 @@
+# Tier-2 checks for rules.md, read by the learning-loop plugin after Write/Edit operations.
+# Advisory only: a report adds context and never blocks the write.
+#
+# Columns, TAB separated:
+#   RULE_ID  PATH_GLOBS  REGEX  MESSAGE
+#
+# PATH_GLOBS is a comma-separated list of shell patterns matched against repository-relative paths.
+# REGEX is grep -E against lines added relative to HEAD. Special forms:
+#   @new             Write created a file not tracked by git
+#   @cross-module    added import of another module's internals; requires rulecheck.config
+#   @cross-feature   alias of @cross-module
+#   @file:<regex>    match the whole file instead of only added lines
+# MESSAGE must not contain double quotes or backslashes because it is embedded in hook JSON.
+#
+# Example (replace or remove):
+# RULE-001	src/*.example	(^|[^A-Za-z])forbidden_api\(	Use approved_api instead.

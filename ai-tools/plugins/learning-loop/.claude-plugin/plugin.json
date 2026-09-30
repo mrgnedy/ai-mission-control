@@ -1,0 +1,8 @@
+{
+  "name": "learning-loop",
+  "description": "Captures durable project lessons as user-confirmed rules and advisory checks.",
+  "version": "0.2.0",
+  "author": {
+    "name": "Noqodi Mobile"
+  }
+}

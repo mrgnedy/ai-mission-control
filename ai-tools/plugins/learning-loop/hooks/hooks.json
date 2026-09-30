@@ -1,0 +1,30 @@
+{
+  "description": "Detect reusable feedback and check newly written lines against repository-owned rules.",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "input=$(cat); prompt=$(printf '%s' \"$input\" | sed -n 's/.*\"prompt\"[[:space:]]*:[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p'); if printf '%s\\n' \"$prompt\" | grep -Eiq '(from now on|next time|always |never |don.t |do not |instead|i told you|you should|remember to|stop )'; then printf '%s' '{\"hookSpecificOutput\":{\"hookEventName\":\"UserPromptSubmit\",\"additionalContext\":\"This prompt may contain reusable feedback. Evaluate it with the lesson skill. Do not write any rule until the user approves the exact wording; skip one-off corrections and policies already covered.\"}}'; fi",
+            "timeout": 5,
+            "statusMessage": "Checking for a reusable lesson…"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/hooks/rule_check.sh\"",
+            "timeout": 10,
+            "statusMessage": "Checking added lines against the rulebook…"
+          }
+        ]
+      }
+    ]
+  }
+}

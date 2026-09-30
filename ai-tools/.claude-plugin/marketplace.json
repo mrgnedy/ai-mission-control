@@ -1,0 +1,14 @@
+{
+  "name": "ai-tools",
+  "owner": {
+    "name": "Noqodi Mobile"
+  },
+  "description": "Reusable Claude Code plugins maintained by the Noqodi mobile team.",
+  "plugins": [
+    {
+      "name": "learning-loop",
+      "source": "./plugins/learning-loop",
+      "description": "Captures durable project lessons as confirmed rules and advisory checks."
+    }
+  ]
+}
