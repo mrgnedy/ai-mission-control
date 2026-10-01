@@ -1,0 +1,8 @@
+{
+  "name": "commit-changes",
+  "description": "Reviews, cleans up, and commits working-tree changes as focused, conventionally typed commits that each build on their own.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Noqodi Mobile"
+  }
+}

@@ -22,12 +22,13 @@ rules and checks travel with the repository and remain reviewable in its history
 
 ## Normal installation
 
-Register the marketplace once. Replace `<marketplace-source>` with its GitHub `owner/repository`,
-Git URL, or absolute local checkout path:
+Register the marketplace once from GitHub:
 
 ```sh
-claude plugin marketplace add <marketplace-source>
+claude plugin marketplace add mrgnedy/ai-tools
 ```
+
+A Git URL or an absolute local checkout path also works when using another source.
 
 Install the plugin:
 

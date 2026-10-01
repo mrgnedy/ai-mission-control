@@ -9,6 +9,11 @@
       "name": "learning-loop",
       "source": "./plugins/learning-loop",
       "description": "Captures durable project lessons as confirmed rules and advisory checks."
+    },
+    {
+      "name": "commit-changes",
+      "source": "./plugins/commit-changes",
+      "description": "Reviews, cleans up, and commits working-tree changes as focused, conventionally typed commits."
     }
   ]
 }
