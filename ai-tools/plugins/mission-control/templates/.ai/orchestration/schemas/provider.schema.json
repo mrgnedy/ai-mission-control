@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/orchestration/provider.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "id", "adapter", "binary", "capabilities"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$"},
+    "adapter": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$"},
+    "binary": {"oneOf": [{"type": "string", "minLength": 1}, {"type": "null"}]},
+    "allowed_bash_rules": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^Bash\\(.+\\)$"}},
+    "capabilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["structured_output", "model_selection", "effort_selection", "read_only", "file_editing", "native_sandbox"],
+      "properties": {
+        "structured_output": {"type": "boolean"},
+        "model_selection": {"type": "boolean"},
+        "effort_selection": {"type": "boolean"},
+        "read_only": {"type": "boolean"},
+        "file_editing": {"type": "boolean"},
+        "native_sandbox": {"type": "boolean"}
+      }
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "schema_version": "1.0",
+  "id": "local",
+  "adapter": "local",
+  "binary": null,
+  "capabilities": {
+    "structured_output": true,
+    "model_selection": false,
+    "effort_selection": false,
+    "read_only": true,
+    "file_editing": false,
+    "native_sandbox": false
+  }
+}

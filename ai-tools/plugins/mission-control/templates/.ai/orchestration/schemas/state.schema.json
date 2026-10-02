@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/orchestration/state.schema.json",
+  "title": "Durable workflow state",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "run_id", "workflow_id", "status", "created_at", "updated_at", "remediation_cycles", "review_status", "last_review_file", "tasks"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "run_id": {"type": "string"},
+    "workflow_id": {"type": "string"},
+    "status": {"enum": ["pending", "running", "completed", "failed", "blocked", "review_required"]},
+    "created_at": {"type": "string"},
+    "updated_at": {"type": "string"},
+    "remediation_cycles": {"type": "integer", "minimum": 0},
+    "review_status": {"enum": ["pending", "passed", "remediation_required", "skipped", "failed"]},
+    "last_review_file": {"type": ["string", "null"]},
+    "unavailable_providers": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "tasks": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["status", "attempts", "updated_at"],
+        "properties": {
+          "status": {"enum": ["pending", "ready", "running", "completed", "failed", "blocked", "review_required"]},
+          "attempts": {"type": "integer", "minimum": 0},
+          "updated_at": {"type": "string"},
+          "result_file": {"type": ["string", "null"]},
+          "failure_code": {"type": ["string", "null"]},
+          "blocked_by": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    }
+  }
+}

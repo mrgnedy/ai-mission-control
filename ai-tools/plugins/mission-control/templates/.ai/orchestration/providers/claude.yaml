@@ -1,0 +1,14 @@
+{
+  "schema_version": "1.0",
+  "id": "claude",
+  "adapter": "claude-cli",
+  "binary": "claude",
+  "capabilities": {
+    "structured_output": true,
+    "model_selection": true,
+    "effort_selection": true,
+    "read_only": true,
+    "file_editing": true,
+    "native_sandbox": true
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "mission-control",
+  "displayName": "Mission Control",
+  "description": "Coordinates disciplined planning, provider-aware delegation, implementation, review, and verified closure.",
+  "version": "0.3.11",
+  "author": {
+    "name": "Mission Control maintainers"
+  },
+  "keywords": [
+    "orchestration",
+    "delegation",
+    "implementation",
+    "claude",
+    "cursor"
+  ]
+}

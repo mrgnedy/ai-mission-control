@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/orchestration/result.schema.json",
+  "title": "Executor-neutral task result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "task_id", "status", "summary", "changed_files", "verification", "warnings", "errors", "executor", "profile", "attempt", "duration_ms"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "task_id": {"type": "string"},
+    "status": {"enum": ["completed", "failed", "blocked", "review_required"]},
+    "summary": {"type": "string"},
+    "changed_files": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "verification": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["command", "status", "exit_code", "duration_ms"],
+        "properties": {
+          "command": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+          "status": {"enum": ["passed", "failed", "timeout", "skipped"]},
+          "exit_code": {"type": ["integer", "null"]},
+          "duration_ms": {"type": "integer", "minimum": 0},
+          "stdout": {"type": "string"},
+          "stderr": {"type": "string"}
+        }
+      }
+    },
+    "warnings": {"type": "array", "items": {"type": "string"}},
+    "no_op_reason": {"type": "string", "minLength": 1},
+    "decision_request": {"type": "object", "additionalProperties": false, "required": ["question", "evidence", "checkpoint"], "properties": {"question": {"type": "string", "minLength": 1}, "evidence": {"type": "string", "minLength": 1}, "checkpoint": {"type": "string", "minLength": 1}, "options": {"type": "array", "items": {"type": "string", "minLength": 1}}}},
+    "errors": {"type": "array", "items": {"type": "string"}},
+    "failure": {
+      "type": ["object", "null"],
+      "required": ["code", "message", "retryable"],
+      "properties": {
+        "code": {"enum": ["agent_implementation", "tool", "timeout", "schema", "test", "scope", "dependency", "merge_conflict", "review", "configuration", "budget", "provider_unavailable", "permission_required", "decision_required"]},
+        "message": {"type": "string"},
+        "retryable": {"type": "boolean"}
+      }
+    },
+    "executor": {"type": "string", "minLength": 1},
+    "profile": {"type": "string"},
+    "model": {"type": ["string", "null"]},
+    "effort": {"type": ["string", "null"]},
+    "attempt": {"type": "integer", "minimum": 1},
+    "duration_ms": {"type": "integer", "minimum": 0},
+    "provider_session_id": {"type": ["string", "null"]},
+    "permission_request": {"type": "object", "additionalProperties": false, "required": ["command", "reason", "checkpoint"], "properties": {"command": {"type": "string", "minLength": 1}, "reason": {"type": "string", "minLength": 1}, "checkpoint": {"type": "string", "minLength": 1}}}
+  }
+}

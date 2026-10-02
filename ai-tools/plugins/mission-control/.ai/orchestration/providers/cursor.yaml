@@ -1,0 +1,14 @@
+{
+  "schema_version": "1.0",
+  "id": "cursor",
+  "adapter": "cursor-cli",
+  "binary": "cursor-agent",
+  "capabilities": {
+    "structured_output": true,
+    "model_selection": true,
+    "effort_selection": false,
+    "read_only": true,
+    "file_editing": true,
+    "native_sandbox": true
+  }
+}

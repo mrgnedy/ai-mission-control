@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/orchestration/methodology.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "id", "default_control_plane", "required_artifacts", "gates", "skills", "require_requirement_traceability", "require_independent_review", "require_final_control_plane_approval"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$"},
+    "default_control_plane": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$"},
+    "required_artifacts": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "gates": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["intake", "investigation", "planning", "implementation", "review", "closure", "learning_capture"]}},
+    "skills": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["workflow", "planner", "router", "review"],
+      "properties": {
+        "workflow": {"type": "string", "minLength": 1},
+        "planner": {"type": "string", "minLength": 1},
+        "router": {"type": "string", "minLength": 1},
+        "review": {"type": "string", "minLength": 1}
+      }
+    },
+    "require_requirement_traceability": {"type": "boolean"},
+    "require_independent_review": {"type": "boolean"},
+    "require_final_control_plane_approval": {"type": "boolean"},
+    "enforce_pre_execution_gates": {"type": "boolean"}
+  }
+}

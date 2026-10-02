@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/orchestration/review.schema.json",
+  "title": "Semantic execution review",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "status", "summary", "issues"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "status": {"enum": ["pass", "remediation_required"]},
+    "summary": {"type": "string"},
+    "issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "severity", "affected_task", "description", "acceptance_criteria"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^REVIEW-[A-Z0-9-]+$"},
+          "severity": {"enum": ["low", "medium", "high", "critical"]},
+          "affected_task": {"type": "string"},
+          "description": {"type": "string", "minLength": 1},
+          "acceptance_criteria": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+          "scope": {"type": "object"}
+        }
+      }
+    }
+  }
+}

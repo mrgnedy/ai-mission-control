@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/orchestration/task.schema.json",
+  "title": "Atomic implementation task",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "title", "type", "objective", "scope", "acceptance_criteria", "depends_on", "capabilities", "complexity", "risk", "verification"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^TASK-[A-Z0-9][A-Z0-9-]*$"},
+    "title": {"type": "string", "minLength": 1},
+    "type": {"enum": ["research", "analysis", "planning", "codebase_scan", "implementation", "business_logic", "codemod", "unit_testing", "integration_testing", "review", "verification", "visual_validation", "simulator", "orchestration"]},
+    "objective": {"type": "string", "minLength": 1},
+    "why": {"type": "string"},
+    "context": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allowed", "forbidden"],
+      "properties": {
+        "allowed": {"type": "array", "items": {"type": "string", "minLength": 1}, "minItems": 1, "uniqueItems": true},
+        "forbidden": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true}
+      }
+    },
+    "acceptance_criteria": {"type": "array", "items": {"type": "string", "minLength": 1}, "minItems": 1},
+    "depends_on": {"type": "array", "items": {"type": "string", "pattern": "^TASK-[A-Z0-9][A-Z0-9-]*$"}, "uniqueItems": true},
+    "decisions": {"type": "array", "items": {"type": "string", "pattern": "^CLR-[A-Z0-9][A-Z0-9-]*$"}, "uniqueItems": true},
+    "capabilities": {"type": "array", "items": {"type": "string", "minLength": 1}, "minItems": 1, "uniqueItems": true},
+    "complexity": {"enum": ["low", "medium", "high"]},
+    "risk": {"enum": ["low", "medium", "high"]},
+    "verification": {
+      "type": "array",
+      "items": {"type": "array", "items": {"type": "string", "minLength": 1}, "minItems": 1}
+    },
+    "requested_profile": {"type": "string"},
+    "metadata": {"type": "object"}
+  }
+}

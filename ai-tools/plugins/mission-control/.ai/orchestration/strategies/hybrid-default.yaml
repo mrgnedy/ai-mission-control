@@ -1,0 +1,7 @@
+{
+  "schema_version": "1.0",
+  "id": "hybrid-default",
+  "allowed_worker_providers": ["local", "cursor", "claude"],
+  "parallel_worktree_providers": ["cursor"],
+  "routing_matrix": "routing-matrix.yaml"
+}

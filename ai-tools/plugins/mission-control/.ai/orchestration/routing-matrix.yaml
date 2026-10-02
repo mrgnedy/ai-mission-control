@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "rules": [
+    {"id": "requested-profile", "priority": 1000, "when": {"requested_profile": "*"}, "profile_from": "requested_profile", "reason": "The approved plan explicitly requested this profile."},
+    {"id": "deterministic-verification", "priority": 900, "when": {"type_in": ["verification"], "capabilities_any": ["schema_validation", "static_analysis", "formatting"]}, "profile": "local-check", "reason": "The task is a deterministic local check."},
+    {"id": "semantic-review", "priority": 800, "when": {"type_in": ["review"]}, "profile": "claude-review", "reason": "Semantic integration review requires cross-task reasoning."},
+    {"id": "control-plane-reasoning", "priority": 720, "when": {"type_in": ["orchestration"]}, "profile": "claude-reasoning", "reason": "Orchestration decisions remain in the Claude control plane."},
+    {"id": "high-risk-business-reasoning", "priority": 710, "when": {"type_in": ["business_logic"], "risk_in": ["high"]}, "profile": "claude-reasoning", "reason": "High-risk business decisions remain in the Claude control plane."},
+    {"id": "delegated-deep-analysis", "priority": 700, "when": {"type_in": ["research", "analysis", "planning"]}, "profile": "cursor-deep-analysis", "reason": "Bounded research, analysis, and planning use the benchmarked GLM 5.2 read-only profile."},
+    {"id": "complex-implementation", "priority": 600, "when": {"type_in": ["implementation", "business_logic", "integration_testing"], "complexity_in": ["high"]}, "profile": "cursor-complex", "reason": "The task is a high-complexity implementation with bounded scope."},
+    {"id": "mechanical", "priority": 500, "when": {"type_in": ["codemod", "unit_testing", "codebase_scan"]}, "profile": "cursor-mechanical", "reason": "The task is mechanical and has explicit acceptance criteria."},
+    {"id": "default-implementation", "priority": 100, "when": {"type_in": ["implementation", "business_logic", "integration_testing", "visual_validation", "simulator"]}, "profile": "cursor-implementation", "reason": "The task is bounded implementation work."},
+    {"id": "default-reasoning", "priority": 0, "when": {}, "profile": "claude-reasoning", "reason": "No safer deterministic implementation route matched."}
+  ],
+  "fallback_rules": [
+    {"id": "complex-high-risk", "priority": 100, "from_profile": "cursor-complex", "when": {"risk_in": ["high"]}, "profiles": ["claude-reasoning"], "reason": "High-risk complex implementation needs the approved Opus worker when Cursor is unavailable."},
+    {"id": "analysis-high-risk", "priority": 100, "from_profile": "cursor-deep-analysis", "when": {"risk_in": ["high"]}, "profiles": ["claude-review"], "reason": "High-risk read-only analysis needs the approved Opus worker when Cursor is unavailable."},
+    {"id": "mechanical-fallback", "priority": 10, "from_profile": "cursor-mechanical", "when": {}, "profiles": ["claude-mechanical"], "reason": "Use the least costly approved mechanical Claude worker when Cursor is unavailable."},
+    {"id": "implementation-fallback", "priority": 10, "from_profile": "cursor-implementation", "when": {}, "profiles": ["claude-implementation"], "reason": "Use the approved Sonnet implementation worker when Cursor is unavailable."},
+    {"id": "complex-fallback", "priority": 10, "from_profile": "cursor-complex", "when": {}, "profiles": ["claude-implementation"], "reason": "Start bounded non-high-risk implementation with Sonnet rather than Opus."},
+    {"id": "analysis-fallback", "priority": 10, "from_profile": "cursor-deep-analysis", "when": {}, "profiles": ["claude-analysis"], "reason": "Use read-only Sonnet analysis before a more expensive reasoning profile."}
+  ]
+}

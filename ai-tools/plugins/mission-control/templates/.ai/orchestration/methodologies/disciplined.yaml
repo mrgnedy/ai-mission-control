@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "id": "disciplined",
+  "default_control_plane": "claude",
+  "required_artifacts": ["spec.md", "plan.md", "tasks.md"],
+  "gates": ["intake", "investigation", "planning", "implementation", "review", "closure", "learning_capture"],
+  "skills": {
+    "workflow": "mission-control",
+    "planner": "implementation-planner",
+    "router": "task-router",
+    "review": "execution-review"
+  },
+  "require_requirement_traceability": true,
+  "require_independent_review": true,
+  "require_final_control_plane_approval": true,
+  "enforce_pre_execution_gates": true
+}

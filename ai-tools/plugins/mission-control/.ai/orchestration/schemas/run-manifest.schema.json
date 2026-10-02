@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/orchestration/run-manifest.schema.json",
+  "title": "Immutable workflow run manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "run_id", "workflow_id", "created_at", "workspace", "change_dir", "sources", "options"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "run_id": {"type": "string", "minLength": 1},
+    "workflow_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$"},
+    "created_at": {"type": "string", "minLength": 1},
+    "workspace": {"type": "string", "minLength": 1},
+    "change_dir": {"type": "string", "minLength": 1},
+    "supersedes": {"type": "string", "minLength": 1},
+    "sources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["task_graph", "delegation"],
+      "properties": {
+        "task_graph": {"$ref": "run-source.schema.json"},
+        "delegation": {"$ref": "run-source.schema.json"},
+        "decisions": {"$ref": "run-source.schema.json"}
+      }
+    },
+    "options": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["parallel", "use_worktrees", "review", "provider_binaries"],
+      "properties": {
+        "parallel": {"type": "boolean"},
+        "use_worktrees": {"type": "boolean"},
+        "review": {"type": "boolean"},
+        "provider_binaries": {
+          "type": "object",
+          "additionalProperties": {"type": "string", "minLength": 1}
+        }
+      }
+    }
+  }
+}

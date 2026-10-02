@@ -1,0 +1,43 @@
+{
+  "schema_version": "1.0",
+  "task_types":
+    [
+      "research",
+      "analysis",
+      "planning",
+      "codebase_scan",
+      "implementation",
+      "business_logic",
+      "codemod",
+      "unit_testing",
+      "integration_testing",
+      "review",
+      "verification",
+      "visual_validation",
+      "simulator",
+      "orchestration"
+    ],
+  "capabilities":
+    [
+      "doc_research",
+      "online_search",
+      "spec_ingestion",
+      "business_gap_analysis",
+      "blast_radius_analysis",
+      "codebase_scan",
+      "mcp",
+      "folder_structure",
+      "implementation",
+      "business_logic",
+      "codemod",
+      "unit_testing",
+      "integration_testing",
+      "code_review",
+      "orchestration",
+      "simulator_control",
+      "visual_validation",
+      "schema_validation",
+      "static_analysis",
+      "formatting"
+    ]
+}

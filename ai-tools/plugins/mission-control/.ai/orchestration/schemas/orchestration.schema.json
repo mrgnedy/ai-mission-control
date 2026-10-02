@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/orchestration/orchestration.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "methodology", "execution_strategy", "control_plane"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "methodology": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$"},
+    "execution_strategy": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$"},
+    "control_plane": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider", "planning_profile", "review_profile", "final_approval_profile"],
+      "properties": {
+        "provider": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$"},
+        "planning_profile": {"type": "string", "minLength": 1},
+        "review_profile": {"type": "string", "minLength": 1},
+        "final_approval_profile": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

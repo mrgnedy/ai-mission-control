@@ -1,0 +1,7 @@
+{
+  "schema_version": "1.0",
+  "id": "claude-only",
+  "allowed_worker_providers": ["local", "claude"],
+  "parallel_worktree_providers": ["claude"],
+  "routing_matrix": "routing-claude-only.yaml"
+}

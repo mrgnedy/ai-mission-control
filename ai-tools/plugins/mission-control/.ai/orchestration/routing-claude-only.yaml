@@ -1,0 +1,12 @@
+{
+  "schema_version": "1.0",
+  "rules": [
+    {"id": "requested-profile", "priority": 1000, "when": {"requested_profile": "*"}, "profile_from": "requested_profile", "reason": "The approved plan explicitly requested this profile."},
+    {"id": "deterministic-verification", "priority": 900, "when": {"type_in": ["verification"], "capabilities_any": ["schema_validation", "static_analysis", "formatting"]}, "profile": "local-check", "reason": "The task is a deterministic local check."},
+    {"id": "semantic-review", "priority": 800, "when": {"type_in": ["review"]}, "profile": "claude-review", "reason": "Claude retains semantic review authority."},
+    {"id": "high-risk-reasoning", "priority": 700, "when": {"risk_in": ["high"]}, "profile": "claude-reasoning", "reason": "High-risk work uses the control-plane reasoning profile."},
+    {"id": "mechanical", "priority": 500, "when": {"type_in": ["codemod", "unit_testing", "codebase_scan"]}, "profile": "claude-mechanical", "reason": "The task is mechanical and bounded."},
+    {"id": "default-implementation", "priority": 100, "when": {"type_in": ["implementation", "business_logic", "integration_testing", "visual_validation", "simulator"]}, "profile": "claude-implementation", "reason": "Claude executes bounded implementation in this strategy."},
+    {"id": "default-reasoning", "priority": 0, "when": {}, "profile": "claude-reasoning", "reason": "No deterministic or bounded implementation route matched."}
+  ]
+}

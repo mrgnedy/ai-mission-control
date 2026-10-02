@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/orchestration/decisions.schema.json",
+  "title": "Change decision readiness index",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "decisions"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "decisions": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["id", "status", "summary", "authority"], "properties": {
+      "id": {"type": "string", "pattern": "^CLR-[A-Z0-9][A-Z0-9-]*$"},
+      "status": {"enum": ["resolved", "open", "scheduled"]},
+      "summary": {"type": "string", "minLength": 1},
+      "authority": {"enum": ["user", "control_plane", "repository_evidence"]},
+      "resolution": {"type": "string", "minLength": 1}
+    }}}
+  }
+}
