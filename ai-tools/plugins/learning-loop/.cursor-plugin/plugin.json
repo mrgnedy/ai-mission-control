@@ -1,0 +1,8 @@
+{
+  "name": "learning-loop",
+  "version": "0.2.0",
+  "description": "Captures durable lessons as confirmed project rules and advisory checks.",
+  "author": {"name": "Noqodi Mobile"},
+  "skills": ["./cursor/skills/setup", "./skills/lesson"],
+  "hooks": "./hooks/cursor.json"
+}

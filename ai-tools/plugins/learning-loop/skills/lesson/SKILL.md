@@ -24,7 +24,7 @@ The plugin convention is `.claude/rules.md`, `.claude/checks.tsv`, and optional
 the rules and checks. Do not copy `hooks/rule_check.sh` into the repository.
 
 If the repository names different rulebook paths, follow its instructions. If it has no rulebook,
-propose initialization as a separately approved step through `/learning-loop:setup`. Use
+propose initialization as a separately approved step through the installed client's `setup` skill. Use
 `assets/wiring.md` when the user wants to inspect or perform the setup manually. If a rulebook
 exists without checks, do not invent tier-2 wiring during a lesson unless the user also approves
 that setup.
@@ -76,8 +76,8 @@ Offer at least: add as written, narrow the scope, reword, or skip. Confirm candi
 
 1. Append or amend the rulebook while preserving its format.
 2. Add a check only when the approved tier calls for one and the repository already has the
-   checks file. Test one violating and one compliant uncommitted change by making Claude perform
-   a `Write` or `Edit`; the plugin's post-write hook must fire for the violation only.
+   checks file. Test one violating and one compliant uncommitted `Write` or `Edit`;
+   the plugin's post-write hook must fire for the violation only.
 3. Confirm every agent bootstrap still imports the rulebook.
 4. Search for stale duplicates and old paths.
 5. Keep within any rulebook size cap; at the cap, propose what the new rule replaces.

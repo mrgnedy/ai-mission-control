@@ -1,0 +1,12 @@
+{
+  "name": "ai-tools",
+  "owner": {"name": "Noqodi Mobile"},
+  "metadata": {"description": "Cursor-compatible plugins from ai-mission-control."},
+  "plugins": [
+    {
+      "name": "learning-loop",
+      "source": "ai-tools/plugins/learning-loop",
+      "description": "Captures confirmed project lessons as shared rules and advisory checks."
+    }
+  ]
+}

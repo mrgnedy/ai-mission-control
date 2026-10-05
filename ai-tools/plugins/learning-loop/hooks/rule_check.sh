@@ -1,7 +1,7 @@
 #!/bin/sh
 #
-# Advisory tier-2 rulebook checker for the learning-loop Claude Code plugin.
-# Repository knowledge remains in <project>/.claude/{rules.md,checks.tsv}.
+# Advisory tier-2 rulebook checker shared by Claude Code and Cursor.
+# Repository knowledge defaults to <project>/.claude/{rules.md,checks.tsv}.
 # The plugin owns this mechanism; consuming repositories must not copy it.
 #
 # Only lines added against HEAD are inspected. An untracked file is inspected
@@ -30,6 +30,13 @@ if [ -n "${LESSON_RULEBOOK_DIR:-}" ]; then
     /*) here=$LESSON_RULEBOOK_DIR ;;
     *) here="$root/$LESSON_RULEBOOK_DIR" ;;
   esac
+elif [ -e "$root/.learning-loop-rulebook-dir" ] || [ -L "$root/.learning-loop-rulebook-dir" ]; then
+  script_dir=$(cd "$(dirname "$0")/../scripts" && pwd -P)
+  here=$(python3 "$script_dir/setup_cursor.py" resolve-pointer "$root" 2>/dev/null)
+  if [ -z "$here" ]; then
+    printf '%s' '{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":"RULEBOOK CHECKER MISWIRED: invalid .learning-loop-rulebook-dir pointer. Repair it before relying on tier-2 checks."}}'
+    exit 0
+  fi
 else
   here="$root/.claude"
 fi

@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "hooks": {
+    "postToolUse": [
+      {
+        "command": "python3 \"${CURSOR_PLUGIN_ROOT}/hooks/cursor_adapter.py\"",
+        "matcher": "Write|Edit|ApplyPatch"
+      }
+    ]
+  }
+}

@@ -23,6 +23,18 @@ root=$(cd "$git_root" && pwd -P) || fail "cannot resolve repository root"
 
 script_dir=$(cd "$(dirname "$0")" && pwd -P) || fail "cannot resolve plugin scripts directory"
 plugin_root=$(dirname "$script_dir")
+# Keep the original Claude path untouched for ordinary repositories. A custom
+# rulebook is handled by the shared setup implementation so Claude and Cursor
+# can use the same approved directory in later sessions.
+if [ -e "$root/.learning-loop-rulebook-dir" ] || [ -L "$root/.learning-loop-rulebook-dir" ] || \
+   [ -n "${LESSON_RULEBOOK_DIR:-}" ] || \
+   [ -f "$root/.Codex/rules.md" ]; then
+  case "$action" in
+    plan) exec python3 "$script_dir/setup_cursor.py" plan-claude "$root" ;;
+    apply) exec python3 "$script_dir/setup_cursor.py" apply-claude "$root" "$expected_plan" ;;
+    *) usage ;;
+  esac
+fi
 assets="$plugin_root/skills/lesson/assets"
 rules_template="$assets/rules.template.md"
 checks_template="$assets/checks.template.tsv"
