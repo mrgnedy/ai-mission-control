@@ -95,8 +95,13 @@ def _later_sibling_overlap(runtime: Path, task_id: str, attempt: int, paths: lis
     return sorted(overlap)
 
 
-def _eligible(runtime: Path, schemas: Path, task_id: str, *, partial_reviewed: bool) -> Dict[str, Any]:
+def _eligible(runtime: Path, schemas: Path, task_id: str, *, partial_reviewed: bool, native_recovery_evidence: str = "") -> Dict[str, Any]:
     manifest = load_data(runtime / "run.json")
+    native = manifest["options"].get("worker_runtime") == "claude-native"
+    if native:
+        from .native import session_status
+        if session_status(runtime)["active_claims"]:
+            raise ValueError("native claims still own this workspace; stop and finish them before reopen")
     if not sources_match(manifest):
         raise ValueError("visible orchestration sources changed; task reopen is unsafe")
     graph = load_data(runtime / "task-graph.yaml")
@@ -105,7 +110,11 @@ def _eligible(runtime: Path, schemas: Path, task_id: str, *, partial_reviewed: b
     result_path, result, result_hash = failed_attempt(runtime, state, task_id)
     code = result["failure"]["code"]
     if code in {"provider_unavailable", "permission_required"}:
-        raise ValueError(f"{code} has its own recovery command")
+        if not native:
+            raise ValueError(f"{code} has its own recovery command")
+        _bounded(native_recovery_evidence, "native permission/provider recovery evidence")
+    elif native_recovery_evidence:
+        raise ValueError("native recovery evidence requires a permission/provider failure")
     changed = result.get("changed_files", [])
     if changed and not partial_reviewed:
         raise ValueError("task has partial edits; inspect them and pass --partial-reviewed")
@@ -159,16 +168,26 @@ def _context_fields(result: Mapping[str, Any], checkpoint: str, resolution: str,
 def reopen_task(
     runtime: Any, schemas: Path, task_id: str, reason: str, *, checkpoint: str = "",
     partial_reviewed: bool = False, resolution: str = "", authority: str = "", evidence: str = "",
-    dry_run: bool = False,
+    dry_run: bool = False, native_recovery_evidence: str = "",
 ) -> Dict[str, Any]:
     reason = _bounded(reason, "reopen reason")
     if dry_run:
         root = runtime if isinstance(runtime, Path) else runtime.root
-        data = _eligible(root, schemas, task_id, partial_reviewed=partial_reviewed)
+        data = _eligible(root, schemas, task_id, partial_reviewed=partial_reviewed, native_recovery_evidence=native_recovery_evidence)
         _context_fields(data["result"], checkpoint, resolution, authority, evidence)
         return {"status": "eligible", "run_id": data["manifest"]["run_id"], "task_id": task_id,
                 "failed_attempt": data["result"]["attempt"], "changed_files": data["result"].get("changed_files", [])}
-    with runtime:
+    manifest = load_data(runtime.manifest_path)
+    if manifest["options"].get("worker_runtime") == "claude-native":
+        from .native import native_transaction
+        transaction = native_transaction(runtime)
+    else:
+        transaction = runtime
+    with transaction:
+        if manifest["options"].get("worker_runtime") == "claude-native":
+            from .native import session_status
+            if session_status(runtime.root)["active_claims"]:
+                raise ValueError("native claims still own this workspace; stop and finish them before reopen")
         prior_records = _records(runtime.root)
         current_state = load_data(runtime.root / "state.json")
         existing = next((record for _, record in prior_records if record.get("task_id") == task_id and
@@ -195,7 +214,7 @@ def reopen_task(
                 raise ValueError("saved task reopen has already been dispatched")
             return {"status": "already_reopened", "run_id": manifest["run_id"], "task_id": task_id,
                     "failed_attempt": existing["result_attempt"]}
-        data = _eligible(runtime.root, schemas, task_id, partial_reviewed=partial_reviewed)
+        data = _eligible(runtime.root, schemas, task_id, partial_reviewed=partial_reviewed, native_recovery_evidence=native_recovery_evidence)
         result = data["result"]
         checkpoint, resolution, authority, evidence = _context_fields(result, checkpoint, resolution, authority, evidence)
         records = _records(runtime.root)
@@ -211,6 +230,8 @@ def reopen_task(
         }
         if resolution:
             record["decision"] = {"resolution": resolution, "authority": authority, "evidence": evidence}
+        if native_recovery_evidence:
+            record["native_recovery_evidence"] = _bounded(native_recovery_evidence, "native recovery evidence")
         directory = runtime.root / "task-reopens"
         directory.mkdir(parents=True, exist_ok=True)
         path = directory / f"{sequence:04d}.json"
@@ -242,7 +263,7 @@ def task_continuation_context(runtime: Path, run_id: str, task_id: str, attempt:
         raise ValueError(f"task {task_id} failed result changed after reopen")
     if git_head(workspace) != record.get("git_head") or _path_fingerprint(workspace, list(record["path_fingerprint"])) != record["path_fingerprint"]:
         raise ValueError(f"task {task_id} files changed after reopen")
-    context = {"continuation": record["checkpoint"]}
+    context = {"continuation": record["checkpoint"], "retained_changed_files": list(record["path_fingerprint"])}
     if record.get("decision"):
         context["decision_resolution"] = record["decision"]["resolution"]
     return context

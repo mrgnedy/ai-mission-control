@@ -186,11 +186,22 @@ def _inspect_run(runtime: Path, schemas: Path) -> Dict[str, Any]:
         "route_revisions": revision_count(runtime),
         "task_reopens": reopen_count(runtime),
         "effective_route_changes": changes,
+        "worker_runtime": manifest["options"].get("worker_runtime", "cli"),
     })
     if _lock_is_active(runtime / ".lock"):
         return _classified(base, "active", False, "run is locked by a live process")
     if not sources_match(manifest):
         return _classified(base, "source_changed", False, "visible orchestration sources changed or are missing")
+    if base["worker_runtime"] == "claude-native":
+        try:
+            from .native import session_status
+            native = session_status(runtime)
+        except Exception as error:
+            return _classified(base, "corrupt", False, f"native session metadata is invalid: {error}")
+        base.update({"native_status": native, "ready_tasks": native["ready_tasks"],
+                     "claims": native["claims"], "partial_block": native["partial_block"]})
+        if native["active_claims"]:
+            return _classified(base, "active", False, "native claims remain owned until explicit worker-stop reconciliation")
     statuses = {item["status"] for item in state["tasks"].values()}
     if state["status"] == "completed":
         return _classified(base, "completed", False, "run already completed")

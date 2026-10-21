@@ -8,6 +8,10 @@ description: Coordinate traceable, resumable software delivery from requirements
 Start by reading `.ai/orchestration/orchestration.yaml`, then load only its selected methodology,
 execution strategy, profiles, provider manifests, and routing matrix. The selected methodology
 defines the required artifacts and gates; the strategy defines which providers may execute work.
+If the strategy's `worker_runtime` is `claude-native`, read
+[native-session.md](references/native-session.md) before dispatch. It replaces the
+CLI dispatch/recovery steps below; all intake, readiness, task records, review and
+retrospective obligations still apply.
 For every CLI operation below, use `"${CLAUDE_PLUGIN_ROOT}/bin/ai-orchestrate"`, not a
 `PATH`-resolved copy that may implement an older contract.
 
@@ -114,7 +118,8 @@ not introduce dynamic imports, arbitrary plugin loading, or duplicated workflow 
    against commands workers need, and the chosen workspace/worktree's build prerequisites. Auth
    status is not a quota guarantee; unprobed model or future quota availability is unknown. Do
    not make a paid provider probe or run a whole baseline suite by default. Run the deterministic
-   orchestrator and treat persisted state/results as authoritative. Workers receive
+   orchestrator for CLI mode, or follow the native session ledger when selected;
+   treat persisted state/results as authoritative. Workers receive
    only bounded context, scope, criteria, and verification. If implementation invalidates an
    assumption, reveals a material risk, or widens scope, stop affected work, resolve it, update all
    records, and reopen any `DONE` task whose Definition of Done is no longer valid. A worker's
@@ -131,7 +136,7 @@ not introduce dynamic imports, arbitrary plugin loading, or duplicated workflow 
    changed files and task-specific postconditions. An explained no-op must be verified against
    the actual diff and criteria. For exceptional changes, require the target API and affected
    call-site evidence rather than accepting a worker's assertion.
-6. **Close and learn.** After every `run` or `resume` stop, including completed, failed, or blocked
+6. **Close and learn.** After every `run`, `resume`, or native session stop, including completed, failed, or blocked
    runs, apply `run-retrospective` to the exact run ID before final handoff. The CLI generates its
    factual `run-report.md` automatically on a normal stop; regenerate it with
    `"${CLAUDE_PLUGIN_ROOT}/bin/ai-orchestrate" report RUN_ID --workspace .` if needed. Review failures, worker routes,
@@ -150,7 +155,7 @@ Stop affected work when scope would be crossed, credentials or external side eff
 authorization, or contract/runtime validation fails. Start standard runs with
 `"${CLAUDE_PLUGIN_ROOT}/bin/ai-orchestrate" run --change specs/<change> --workspace .`. Each run stores an immutable manifest
 under `.ai-runtime/<workflow-id>/<run-id>/`. Use the bundled CLI's `runs` or `status` to inspect it.
-Claude writing workers run restricted, so project `.claude/settings.json` allow rules are not
+CLI Claude writing workers run restricted, so project `.claude/settings.json` allow rules are not
 inherited. Repository owners may opt into stable, narrow rules through
 `.ai/orchestration/providers/claude.yaml` `allowed_bash_rules` (for example, a specific test
 command). Rules are passed only to writing Claude workers. Avoid blanket Bash approval; keep

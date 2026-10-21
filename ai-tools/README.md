@@ -20,3 +20,13 @@ claude plugin install mission-control@ai-tools
 ```
 
 For local development, register this `ai-tools` directory instead of the GitHub repository.
+
+## Native-Agent feature branch
+
+On `feat/claude-native-agents`, both marketplace catalogs are named
+`ai-tools-native` to avoid replacing the normal `ai-tools` source. The general
+install commands above apply to `main`, not this feature branch.
+For upgrading a repo with an older installation, follow the
+[native branch upgrade guide](plugins/mission-control/docs/UPGRADE_NATIVE.md).
+See the repository [changelog](../CHANGELOG.md) for capabilities, compatibility,
+and validation.

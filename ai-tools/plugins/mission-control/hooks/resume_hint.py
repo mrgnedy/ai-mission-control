@@ -37,6 +37,7 @@ def main() -> int:
         *summaries,
         "Do not recover or resume automatically. Mention the relevant run to the user; continue only after explicit user intent.",
         "Recovery-required runs need a reviewed quota fallback draft and applied route revision before resume. Other failed, blocked, source-changed, active, or corrupt runs must not be blindly resumed.",
+        "For worker_runtime claude-native, inspect status and native claims in the live Claude session. Use session claim/finish/review; never CLI resume or clear a claim because a process exited. Reconcile actual Agent stop/return evidence first.",
     ])
     print(json.dumps({
         "hookSpecificOutput": {

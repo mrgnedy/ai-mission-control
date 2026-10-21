@@ -113,6 +113,26 @@ def build_parser() -> argparse.ArgumentParser:
     review.add_argument("output_delegation", type=Path)
     review.add_argument("--remediation-cycles", type=int, default=0)
     _config_arguments(review)
+
+    session = subparsers.add_parser("session", help="Ledger for workers dispatched by the live Claude session")
+    operations = session.add_subparsers(dest="operation", required=True)
+    start = operations.add_parser("start")
+    start.add_argument("--change", type=Path, required=True)
+    start.add_argument("--workspace", type=Path, default=Path.cwd())
+    _config_arguments(start)
+    for operation in ("claim", "finish", "review"):
+        command = operations.add_parser(operation)
+        command.add_argument("run_id")
+        command.add_argument("--workspace", type=Path, default=Path.cwd())
+        if operation == "claim":
+            command.add_argument("task_id")
+        else:
+            command.add_argument("--result", type=Path, required=operation == "finish")
+            command.add_argument("--worker-stopped", action="store_true")
+            command.add_argument("--stop-evidence", default="")
+            if operation == "review":
+                command.add_argument("--approval", default="", help="Main session's final approval reason")
+    reopen.add_argument("--native-recovery-evidence", default="")
     return parser
 
 
@@ -145,6 +165,9 @@ def _default_config() -> Path:
 def main(argv: Optional[Sequence[str]] = None) -> int:
     args = build_parser().parse_args(argv)
 
+    if args.command == "session":
+        return _session_command(args)
+
     if args.command == "runs":
         records = discover_runs(args.workspace, SCHEMAS, include_completed=args.all)
         _print({"runs": [_public_record(record) for record in records]})
@@ -169,6 +192,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         return 0
     if args.command == "grant-permission":
         record = resolve_run(args.workspace, SCHEMAS, args.run_id)
+        _require_cli_run(record)
         if record["classification"] != "permission_required":
             raise ValueError(f"run has no pending permission request: {record['classification']}")
         _print(grant_permission(
@@ -178,7 +202,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         return 0
     if args.command == "reopen":
         record = resolve_run(args.workspace, SCHEMAS, args.run_id)
-        if record["classification"] in {"active", "corrupt", "source_changed", "completed", "recovery_required"}:
+        native = record.get("worker_runtime") == "claude-native"
+        if record["classification"] in {"active", "corrupt", "source_changed", "completed"} or (record["classification"] == "recovery_required" and not native):
             raise ValueError(f"run is not eligible for task reopen: {record['classification']}")
         _print(reopen_task(
             Path(record["runtime"]) if args.dry_run else RuntimeStore(Path(record["runtime"])),
@@ -186,12 +211,14 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             checkpoint=args.checkpoint, partial_reviewed=args.partial_reviewed,
             resolution=args.resolution, authority=args.authority, evidence=args.evidence,
             dry_run=args.dry_run,
+            native_recovery_evidence=args.native_recovery_evidence,
         ))
         return 0
     if args.command == "recover":
         if args.apply is not None and args.restore_provider is not None:
             raise ValueError("--restore-provider creates a draft; use --apply PLAN separately")
         record = resolve_run(args.workspace, SCHEMAS, args.run_id)
+        _require_cli_run(record)
         if record["classification"] != "recovery_required":
             raise ValueError(f"run is not eligible for quota recovery: {record['classification']}")
         runtime_path = Path(record["runtime"])
@@ -233,14 +260,21 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         report["methodology"] = bundle["methodology"]["id"]
         report["execution_strategy"] = bundle["execution_strategy"]["id"]
         report["control_plane"] = bundle["orchestration"]["control_plane"]
+        native = bundle["execution_strategy"].get("worker_runtime", "cli") == "claude-native"
+        if native:
+            report["native_dispatch"] = {
+                "status": "requires_live_session",
+                "reason": "CLI flags/auth do not prove the current session exposes Agent or its requested model; check the loaded native agents in Claude.",
+            }
         report["packaged_assets"] = inspect_packaged_assets(
-            ROOT, (provider["adapter"] for provider in providers.values()),
+            ROOT, ["claude-native"] if native else (provider["adapter"] for provider in providers.values()),
             review=bundle["methodology"]["require_independent_review"],
         )
         _print(report)
         return 0
     if args.command == "route":
         graph_path, output_path = _route_paths(args)
+        _reject_native_output(output_path)
         graph = load_data(graph_path)
         validate_with_schema(graph, SCHEMAS / "task-graph.schema.json")
         delegation = route_graph(graph, profiles, matrix, allowed)
@@ -263,6 +297,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         _print({"status": "valid", "workflow_id": graph["workflow"]["id"], "tasks": len(graph["tasks"])})
         return 0
     if args.command in {"run", "resume"}:
+        if bundle["execution_strategy"].get("worker_runtime", "cli") == "claude-native":
+            raise ValueError("native workers are dispatched by Claude: use session start, status and session claim/finish/review")
         assert execution is not None
         graph = load_data(execution["graph"])
         delegation = (
@@ -323,6 +359,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         _print(state)
         return 0 if state["status"] == "completed" else 2
     if args.command == "review":
+        _reject_native_output(args.output_graph)
+        _reject_native_output(args.output_delegation)
         graph = load_data(args.graph)
         review_value = load_data(args.review)
         validate_with_schema(graph, SCHEMAS / "task-graph.schema.json")
@@ -451,6 +489,7 @@ def _resume_invocation(args: argparse.Namespace) -> Dict[str, Any]:
     discovery_root = (args.workspace or Path.cwd()).resolve()
     run_id = args.targets[0] if args.targets else None
     record = resolve_run(discovery_root, SCHEMAS, run_id)
+    _require_cli_run(record)
     if not record["resumable"]:
         return {
             "refusal": {
@@ -519,6 +558,8 @@ def _validate_pre_execution(
         bundle["providers"][route["executor"]]["adapter"]
         for route in delegation["execution_plan"].values()
     }
+    if bundle["execution_strategy"].get("worker_runtime", "cli") == "claude-native":
+        adapters = {"claude-native"}
     assets = inspect_packaged_assets(
         ROOT, adapters,
         review=methodology["require_independent_review"] if review is None else review,
@@ -550,8 +591,67 @@ def _public_record(record: Dict[str, Any]) -> Dict[str, Any]:
         "pending_permissions",
         "pending_decisions", "supersedes",
         "task_reopens",
+        "worker_runtime", "ready_tasks", "claims", "partial_block",
     )
     return {key: record[key] for key in keys if key in record}
+
+
+def _require_cli_run(record: Dict[str, Any]) -> None:
+    if record.get("worker_runtime") == "claude-native":
+        raise ValueError("this run uses native Claude Agents; inspect status and use session operations or reviewed reopen")
+
+
+def _reject_native_output(path: Path) -> None:
+    for directory in path.resolve().parents:
+        manifest = directory / "run.json"
+        if manifest.is_file() and load_data(manifest).get("options", {}).get("worker_runtime") == "claude-native":
+            raise ValueError("native runtime inputs may only change through session review remediation")
+
+
+def _session_command(args: argparse.Namespace) -> int:
+    from .native import start_session, claim_task, finish_task, session_review
+
+    if args.operation == "start":
+        bundle = load_configuration(ROOT, args.config)
+        if bundle["execution_strategy"].get("worker_runtime", "cli") != "claude-native":
+            raise ValueError("session start requires execution_strategy: claude-native")
+        args.graph = args.delegation = args.runtime = args.supersedes = None
+        args.parallel = True
+        args.no_worktrees = True
+        args.skip_review = False
+        execution = _run_invocation(args)
+        execution["options"]["worker_runtime"] = "claude-native"
+        execution["manifest"]["options"]["worker_runtime"] = "claude-native"
+        graph, delegation = load_data(execution["graph"]), load_data(execution["delegation"])
+        decisions = _load_decisions(execution["graph"].parent / "decisions.yaml")
+        _validate_execution(graph, delegation, bundle["profiles"], bundle["providers"], ["claude"], decisions)
+        _validate_pre_execution(bundle, args.change, graph, delegation, decisions, review=True)
+        value = start_session(ROOT, bundle, execution)
+    else:
+        record = resolve_run(args.workspace, SCHEMAS, args.run_id)
+        manifest = load_data(Path(record["runtime"]) / "run.json")
+        validate_run_manifest(manifest, SCHEMAS)
+        if manifest["options"].get("worker_runtime") != "claude-native":
+            raise ValueError("session operations require a native run")
+        if Path(manifest["workspace"]).resolve() != args.workspace.resolve():
+            raise ValueError("native run belongs to another workspace")
+        # Finish/review may repair a write-before-state crash using their saved
+        # receipt; native._load permits only drift explained by that receipt.
+        if record["classification"] == "source_changed" or (record["classification"] == "corrupt" and args.operation == "claim"):
+            raise ValueError(f"native run is not eligible: {record['classification']}")
+        runtime = RuntimeStore(Path(record["runtime"]))
+        if args.operation == "claim":
+            value = claim_task(ROOT, runtime, args.task_id)
+        else:
+            submission = load_data(args.result) if args.result is not None else None
+            options = {"worker_stopped": args.worker_stopped, "stop_evidence": args.stop_evidence}
+            if args.operation == "finish":
+                value = finish_task(ROOT, runtime, submission, **options)
+            else:
+                value = session_review(ROOT, runtime, submission, approval=args.approval, **options)
+            _report_after_stop(runtime.root)
+    _print(value)
+    return 0
 
 
 def _print(value: Any) -> None:

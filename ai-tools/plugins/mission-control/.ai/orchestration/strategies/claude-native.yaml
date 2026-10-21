@@ -1,0 +1,10 @@
+{
+  "schema_version": "1.0",
+  "id": "claude-native",
+  "worker_runtime": "claude-native",
+  "allowed_worker_providers": [
+    "claude"
+  ],
+  "parallel_worktree_providers": [],
+  "routing_matrix": "routing-claude-native.yaml"
+}
