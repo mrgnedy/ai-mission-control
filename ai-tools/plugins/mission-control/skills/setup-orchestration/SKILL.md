@@ -1,12 +1,14 @@
 ---
 name: setup-orchestration
-description: Initialize or reconcile a repository's project-owned Mission Control .ai/orchestration configuration. Use after installation, when setting up a workspace, or when reviewing template changes after a plugin update.
+description: Initialize or reconcile project-owned Mission Control configuration, choose an execution strategy, and review or customize its profile models. Use after installation, when setting up a workspace, or when changing strategy/model assignments.
 ---
 
 # Set up orchestration
 
 Resolve the intended workspace root before writing. Prefer the current Git repository root; use a
 different path only when the user names it explicitly.
+Inspect pending runs before edits. Never change a running mission's configuration or frozen
+snapshots; finish/reconcile its workers first or leave the proposed setup unapplied.
 
 Inspect first:
 
@@ -22,24 +24,22 @@ manifests, routing rules, prompts, and schemas under `.ai/orchestration/`. Setup
 The current template's disciplined methodology opts into pre-execution artifact, known-decision,
 and required-review gates. A plugin update does not opt an existing project in; treat that
 methodology difference as a project-policy choice during a semantic merge.
-The template also includes an opt-in `claude-native` strategy and routing matrix
-with `native-*` profiles. To enable it, deliberately set `execution_strategy` to
-`claude-native` and `control_plane.review_profile` to `native-review`. Do not switch
-an existing project's mode during an update without the user's intent. Native
-workers use plugin `agents/` and parent permissions; provider CLI Bash allow rules
-do not configure native Agents.
+Execution strategy and methodology are different: choosing worker dispatch must not silently
+change the project's methodology gates. Stage reconciliation, strategy selection, and model
+edits as one proposal before applying them.
 
 ## Missing or current configuration
 
-For `status: missing`, run the initializer without a mode. It validates and copies the complete
-template:
+For `status: missing`, use the packaged template as the proposed starting point. Complete the
+strategy/profile choices below, then run the initializer and apply only the approved overrides:
 
 ```bash
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/init_orchestration.py" --workspace <workspace-root>
 ```
 
-For `status: current`, do not prompt or rewrite anything. Any template-only, project-only, or
-changed path makes the status divergent so removal and retention decisions stay visible.
+For `status: current`, skip the merge/replace question, but still offer strategy and model review.
+Keeping the selected strategy and all models is a no-op; do not rewrite identical files.
+Any template-only, project-only, or changed path makes the status divergent.
 
 ## Divergent configuration
 
@@ -57,6 +57,70 @@ blind copy: distinguish project decisions from obsolete contracts, patch only wh
 plugin version requires, and show the exact proposed/actual file list. If a conflict changes
 provider authority, cost policy, methodology gates, or task behavior and the user's preference is
 not known, stop that part of the merge and ask.
+Keep unchanged ends the write workflow; do not interpret later inspection as permission to edit.
+
+## Choose strategy, then review profile models
+
+1. **Discover the actual choices.** Read the project selector and strategy manifests under
+   `.ai/orchestration/strategies/`, plus packaged choices under
+   `${CLAUDE_PLUGIN_ROOT}/templates/.ai/orchestration/strategies/`. Project definitions win for
+   duplicate IDs; show packaged-only strategies as requiring an approved setup merge.
+   Do not replace a customized strategy with its stock namesake or invent options from memory.
+   Print a compact strategy table: ID, worker runtime (`cli` when omitted), allowed worker
+   providers, isolation/parallelism, current selection, and whether required assets are present.
+   Infer the explanation from each manifest and its routing matrix. The stock choices currently
+   cover hybrid CLI, Claude-only CLI, and native Claude Agents; custom valid strategies belong
+   in the same list. Native writers are serial in the shared workspace; only readers may overlap.
+
+2. **Ask which strategy to use.** Offer retaining the current strategy as the default for an
+   existing repo, or explicitly choosing another available ID. Missing configuration needs an
+   explicit choice rather than silently accepting the template's default. If the user already
+   selected a strategy in this invocation, acknowledge it instead of asking again.
+   A strategy choice is not permission to replace project policy or change methodologies.
+   Native workers use plugin `agents/` and parent permissions, not provider CLI Bash allow rules.
+   Keep Claude as the control plane unless the user separately requests a supported change.
+
+3. **Print that strategy's profile inventory before asking for edits.** Resolve its routing
+   matrix, project profiles/provider manifests, and control-plane profile references from the
+   proposed merged configuration. Show every compatible worker profile, not just profiles
+   selected by static rules: `requested_profile` may pin other eligible profiles. Compatibility
+   requires an allowed provider and the runtime's supported isolation, model, and effort.
+   For native workers this means Claude, workspace/read_only, haiku/sonnet/opus, and no explicit
+   effort. Do not silently coerce an incompatible customized profile.
+   Use a table with profile ID, provider, current model, effort, isolation, and usage
+   (routing rule/task role, fallback, control-plane role, or available but currently unused).
+   Include direct rule references and fallback profiles. Show referenced incompatible/missing
+   profiles separately as conflicts, not as usable choices.
+   Also show planning/review/final-approval profile references. Control-plane-only profiles
+   need not satisfy native worker constraints; label them separately. Their configuration does
+   not switch the already-running parent Claude session's model/effort. Native worker effort
+   inherits the parent. Local command-only profiles have no model to edit.
+
+4. **Ask for model changes by profile ID, or keep all unchanged.** For example:
+   `native-standard -> haiku` or `cursor-implementation -> <provider-model-id>`.
+   Accept changes to any displayed model-bearing profile, including fallback and control-plane
+   profiles, within that provider/runtime's supported choices. Do not limit editing to the
+   example or preferred models. Keep profile IDs/routing references stable; explain that changing
+   a shared profile changes every use of it, including uses in other strategies.
+   If the user wants strategy-specific values, propose a separately named profile and updated
+   references for approval rather than silently cloning profiles.
+   Flag model/effort incompatibility and cost-class implications; do not silently change expense
+   labels, budgets, provider permissions, or isolation. Validate supplied model IDs using
+   available provider metadata when possible. Unknown model availability remains unverified;
+   a schema pass is not a successful provider probe. Do not make paid probes by default.
+   Users may edit the proposed files themselves; reread their edits before validation/applying.
+
+5. **Preview, confirm, and apply the minimal diff.** Show the selected strategy, affected
+   control-plane references, each old -> new model assignment, and exact file paths. An explicit
+   choice/edit request authorizes those changes, not unrelated template conflicts; ask only for
+   unresolved choices. Native mode needs a compatible read-only review profile with inherited
+   effort: retain an existing compatible choice, otherwise propose `native-review` and show
+   the `control_plane.review_profile` change. Do not carry that native-only restriction into
+   CLI mode. Initialize/merge/replace only as approved, then patch the project selector/profiles;
+   never edit packaged defaults, provider accounts, visible mission plans, or runtime snapshots
+   as part of setup. If the user keeps strategy/models unchanged, preserve their bytes.
+
+## Apply and validate
 
 For an explicitly chosen replacement, run:
 
@@ -80,3 +144,8 @@ Also validate any affected schemas or routing behavior appropriate to the change
 created, merged, retained, removed, and backed-up files distinctly. Plugin installation/update and
 repository configuration reconciliation are separate operations; completing one never implies the
 other.
+Do the same validation for strategy/model-only edits. Check all referenced primary, fallback,
+and control-plane profiles against the selected provider/runtime; verify route model/effort
+compatibility, not just selector syntax. Do not claim setup success with unresolved conflicts.
+Finish by printing the saved strategy and effective profile/model table, with any unverified
+provider availability clearly marked. Setup never starts implementation.

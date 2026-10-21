@@ -1,4 +1,4 @@
-# Upgrade to Mission Control 0.3.12 on main
+# Upgrade to Mission Control 0.3.13 on main
 
 Marketplace: `ai-tools`. Plugin: `mission-control@ai-tools`.
 Native Claude Agent execution is included but remains opt-in; the existing CLI
@@ -41,7 +41,7 @@ claude plugin list
 
 Update uses the installed scope by default. If several scopes are installed, use
 `--scope user`, `--scope project`, or `--scope local` to target the intended one.
-Confirm version 0.3.12. A user-scope update affects other repos using that user
+Confirm version 0.3.13. A user-scope update affects other repos using that user
 installation; use a local installation below to try this only in one repo.
 
 A marketplace pinned to a branch/tag follows that ref, not main. A local-path
@@ -93,9 +93,13 @@ In the new Claude session invoke:
 /mission-control:setup-orchestration
 ```
 
-Then say:
+Setup now asks which available strategy to use, then prints compatible worker,
+fallback, and control-plane profiles with their models for optional edits.
+You can keep the current choices, name changes by profile ID, or review/edit the
+proposed files before applying. If configuration diverges, choose Merge to retain
+customizations. You can supply preferences up front:
 
-> Merge this repo's .ai/orchestration with the installed 0.3.12 templates. Preserve
+> Merge this repo's .ai/orchestration with the installed 0.3.13 templates. Preserve
 > my provider permissions, budgets, existing profiles/routing, methodology gates,
 > and project-only files. Show changed files and validate using the bundled
 > executable. Do not start execution.

@@ -1,5 +1,12 @@
 # Changelog
 
+## Mission Control 0.3.13 — 2026-10-22
+
+- Setup now discovers available project/packaged execution strategies, asks which
+  to use, and prints compatible worker, fallback, and control-plane profile/model
+  assignments for optional edits. Current configurations can be reviewed without
+  replacement; shared-profile effects and native-runtime constraints stay explicit.
+
 ## Mission Control 0.3.12 — 2026-10-22
 
 Native-Agent execution is merged into `main`, retaining the existing `ai-tools`
