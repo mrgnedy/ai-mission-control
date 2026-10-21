@@ -27,6 +27,10 @@ For every task:
    fallback. A person may explicitly add one to delegation before the run freezes.
 7. Check expensive-task and parallel-agent budgets; only providers listed in
    `parallel_worktree_providers` may form a parallel worktree batch.
+   For `worker_runtime: claude-native`, use workspace or read_only native profiles
+   without explicit effort. Only read-only batches may overlap; writers own the
+   shared workspace alone through verification. Native claim checks account for
+   all outstanding Agents, not just the next proposed batch.
 
 Do not change task scope, acceptance criteria, dependencies, or verification. Do not execute
 anything. If no valid profile exists or the graph/delegation coverage differs, fail validation.

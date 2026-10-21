@@ -112,6 +112,12 @@ def build_report(runtime: Path, state: Mapping[str, Any], graph: Mapping[str, An
     ]
     if manifest.get("supersedes"):
         lines.insert(4, f"- Supersedes prior run: `{_inline(manifest['supersedes'])}`. This link does not copy task state or approvals.")
+    if manifest.get("options", {}).get("worker_runtime") == "claude-native":
+        from .native import session_status
+        native = session_status(runtime)
+        lines.insert(4, f"- Worker runtime: `claude-native`; unresolved claims: {len(native['active_claims'])}; partial-work restrictions: {', '.join(native['partial_block']) or 'none'}. Native model aliases are requested routes unless resolved model evidence was supplied from the Agent tool; effort inherits the parent session.")
+        if native.get("approval"):
+            lines.insert(5, "- Parent final approval is recorded in [native-session.json](native-session.json).")
     for task_id in sorted(tasks):
         definition = task_definitions[task_id]
         entries = attempts[task_id]

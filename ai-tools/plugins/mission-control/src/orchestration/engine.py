@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from contextlib import nullcontext
 from pathlib import Path
 from typing import Any, Dict, Mapping, Optional
 import time
@@ -15,10 +16,10 @@ from .permissions import task_permission_context
 from .review import ReviewRunner, apply_review, load_results
 from .retry import retry_delay_seconds, should_retry
 from .runtime import RuntimeStore
-from .scope import git_changed_files, git_head, validate_scope
+from .scope import git_changed_files, git_head, git_snapshot, validate_scope
 from .state import create_state, extend_for_graph, recover_stale_running, refresh, transition
 from .validator import validate_delegation, validate_result
-from .verification import run_commands, verification_passed
+from .verification import collect_task_evidence
 from .worktree import WorktreeManager
 
 
@@ -43,6 +44,11 @@ class WorkflowEngine:
         review_provider: str = "claude",
         review_profile: str = "claude-review",
     ) -> None:
+        from .io import load_data
+        if runtime.manifest_path.exists() and load_data(runtime.manifest_path)["options"].get("worker_runtime") == "claude-native":
+            raise ValueError("CLI engine cannot execute or reset native Agent claims")
+        if configuration_snapshot and configuration_snapshot["execution_strategy"].get("worker_runtime") == "claude-native":
+            raise ValueError("native strategy must use session operations")
         schemas = root / ".ai/orchestration/schemas"
         validate_with_schema(graph, schemas / "task-graph.schema.json")
         validate_with_schema(delegation, schemas / "delegation.schema.json")
@@ -67,7 +73,14 @@ class WorkflowEngine:
         self.worktrees: Optional[WorktreeManager] = None
 
     def run(self, *, resume: bool = False, run_id: str = "") -> Dict[str, Any]:
-        with self.runtime:
+        from .native import _other_owners, workspace_transaction
+        shared = not self.use_worktrees or not _is_git_repository(self.workspace)
+        # Legacy runtimes may live outside .ai-runtime and cannot be discovered
+        # there. Hold the checkout lock for shared CLI work; isolated worktrees
+        # keep their existing parallel behavior.
+        with workspace_transaction(self.workspace) if shared else nullcontext(), self.runtime:
+            if shared:
+                _other_owners(self.workspace, self.runtime)
             if resume and self.runtime.state_path.exists():
                 state = self.runtime.load_state(self.graph, extend=True)
                 recover_stale_running(state)
@@ -330,51 +343,23 @@ class WorkflowEngine:
             ))
         try:
             execution_head = git_head(workspace)
+            execution_snapshot = git_snapshot(workspace)
         except WorkflowError:
             execution_head = None
+            execution_snapshot = {}
         executor = self.executors[route["executor"]]
         result = executor.execute(task, effective_route, profile, workspace, attempt)
         validate_result(result)
         if carried_changes:
             result["changed_files"] = sorted(set(result["changed_files"]) | set(carried_changes))
-        if (
-            result["status"] == "completed"
-            and route["executor"] != "local"
-            and route["isolation"] != "read_only"
-            and task["type"] in {"implementation", "business_logic", "codemod", "unit_testing", "integration_testing"}
-            and not result["changed_files"]
-            and not result.get("no_op_reason")
-        ):
-            result["status"] = "failed"
-            result["summary"] = "writing task reported completion without edits or a no-op reason"
-            result["errors"].append(result["summary"])
-            result["failure"] = {
-                "code": FailureCode.AGENT_IMPLEMENTATION.value,
-                "message": result["summary"],
-                "retryable": False,
-            }
-        if result["status"] == "completed" and task["verification"] and not result["verification"]:
-            records = run_commands(task["verification"], workspace, effective_route["timeout_seconds"])
-            result["verification"] = records
-            if not verification_passed(records):
-                result["status"] = "failed"
-                result["summary"] = "Post-execution verification failed."
-                result["errors"].append("post-execution verification failed")
-                result["failure"] = {
-                    "code": FailureCode.TEST.value,
-                    "message": "post-execution verification failed",
-                    "retryable": False,
-                }
-        if execution_head is not None and git_head(workspace) != execution_head:
-            error = WorkflowError(
-                FailureCode.SCOPE,
-                "task execution changed Git HEAD; task-created commits are prohibited",
-                False,
+        effective_route["retained_changed_files"] = sorted(
+            set(effective_route.get("retained_changed_files", [])) | set(carried_changes)
+        )
+        if execution_head is not None:
+            result = collect_task_evidence(
+                task, effective_route, workspace, execution_head, execution_snapshot, result,
+                timeout_seconds=effective_route["timeout_seconds"],
             )
-            result["status"] = "failed"
-            result["summary"] = error.message
-            result["errors"].append(error.message)
-            result["failure"] = error.as_dict()
         if integrate_worktree and result["status"] == "completed":
             self._integrate_worktree_result(task_id, result)
         validate_result(result)

@@ -20,3 +20,13 @@ claude plugin install mission-control@ai-tools
 ```
 
 For local development, register this `ai-tools` directory instead of the GitHub repository.
+
+## Native-Agent execution
+
+Mission Control 0.3.12 includes opt-in native Claude Agent execution on `main`.
+The marketplace remains `ai-tools`; existing installations update under the same ID.
+CLI execution remains the default until project configuration explicitly selects
+`claude-native`. For older installations or migration from `ai-tools-native`,
+follow the [upgrade guide](plugins/mission-control/docs/UPGRADE_NATIVE.md).
+See the repository [changelog](../CHANGELOG.md) for capabilities, compatibility,
+and validation.

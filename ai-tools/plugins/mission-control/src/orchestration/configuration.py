@@ -130,6 +130,18 @@ def validate_configuration_bundle(bundle: Any, schemas: Path) -> None:
     if control_provider not in allowed:
         raise ValidationError("execution strategy must allow the control-plane provider")
     parallel = set(bundle["execution_strategy"]["parallel_worktree_providers"])
+    if bundle["execution_strategy"].get("worker_runtime", "cli") == "claude-native":
+        if control_provider != "claude" or allowed != {"claude"} or parallel:
+            raise ValidationError("claude-native requires Claude control/workers and no worktree providers")
+        reviewer = profiles[control["review_profile"]]
+        if reviewer.get("effort") is not None or reviewer.get("model") not in {"haiku", "sonnet", "opus"}:
+            raise ValidationError("claude-native requires a native review profile with inherited effort and a supported model alias")
+        for rule in bundle["routing_matrix"].get("rules", []):
+            if "profile" not in rule:
+                continue
+            profile = profiles.get(rule["profile"], {})
+            if profile.get("isolation") == "worktree" or profile.get("effort") is not None:
+                raise ValidationError("native routing requires shared/read-only isolation and inherited effort")
     if not parallel <= allowed:
         raise ValidationError("parallel worktree providers must be allowed by the strategy")
     for provider_id in parallel:

@@ -12,8 +12,10 @@ def inspect_packaged_assets(root: Path, adapters: Iterable[str], *, review: bool
     """Check only assets needed by the selected worker adapters and review mode."""
     selected = set(adapters)
     required = set()
-    if selected & {"claude-cli", "cursor-cli"}:
+    if selected & {"claude-cli", "cursor-cli", "claude-native"}:
         required.add("skills/code-discipline/SKILL.md")
+    if "claude-native" in selected:
+        required.update({"agents/native-reader.md", "agents/native-writer.md"})
     if "claude-cli" in selected:
         required.add(".ai/orchestration/prompts/claude-task.md")
     if "cursor-cli" in selected:

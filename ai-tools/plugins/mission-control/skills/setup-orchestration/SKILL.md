@@ -22,6 +22,12 @@ manifests, routing rules, prompts, and schemas under `.ai/orchestration/`. Setup
 The current template's disciplined methodology opts into pre-execution artifact, known-decision,
 and required-review gates. A plugin update does not opt an existing project in; treat that
 methodology difference as a project-policy choice during a semantic merge.
+The template also includes an opt-in `claude-native` strategy and routing matrix
+with `native-*` profiles. To enable it, deliberately set `execution_strategy` to
+`claude-native` and `control_plane.review_profile` to `native-review`. Do not switch
+an existing project's mode during an update without the user's intent. Native
+workers use plugin `agents/` and parent permissions; provider CLI Bash allow rules
+do not configure native Agents.
 
 ## Missing or current configuration
 

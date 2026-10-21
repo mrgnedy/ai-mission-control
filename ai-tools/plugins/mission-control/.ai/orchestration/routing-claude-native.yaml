@@ -1,0 +1,120 @@
+{
+  "schema_version": "1.0",
+  "rules": [
+    {
+      "id": "requested-profile",
+      "priority": 1000,
+      "when": {
+        "requested_profile": "*"
+      },
+      "profile_from": "requested_profile",
+      "reason": "The approved plan explicitly pinned this profile."
+    },
+    {
+      "id": "independent-review",
+      "priority": 950,
+      "when": {
+        "type_in": [
+          "review"
+        ]
+      },
+      "profile": "native-review",
+      "reason": "Fresh independent review uses Opus."
+    },
+    {
+      "id": "deep-read",
+      "priority": 900,
+      "when": {
+        "type_in": [
+          "research",
+          "analysis",
+          "planning",
+          "codebase_scan"
+        ],
+        "risk_in": [
+          "high"
+        ]
+      },
+      "profile": "native-review",
+      "reason": "High-risk analysis needs deep read-only reasoning."
+    },
+    {
+      "id": "cheap-scan",
+      "priority": 850,
+      "when": {
+        "type_in": [
+          "codebase_scan"
+        ],
+        "complexity_in": [
+          "low"
+        ],
+        "risk_in": [
+          "low"
+        ]
+      },
+      "profile": "native-reader-fast",
+      "reason": "Bounded lookup uses the cheapest qualified reader."
+    },
+    {
+      "id": "analysis",
+      "priority": 800,
+      "when": {
+        "type_in": [
+          "research",
+          "analysis",
+          "planning",
+          "codebase_scan"
+        ]
+      },
+      "profile": "native-reader",
+      "reason": "Synthesis stays read-only with Sonnet."
+    },
+    {
+      "id": "high-risk",
+      "priority": 750,
+      "when": {
+        "risk_in": [
+          "high"
+        ]
+      },
+      "profile": "native-deep",
+      "reason": "High-risk work requires Opus."
+    },
+    {
+      "id": "high-complexity",
+      "priority": 700,
+      "when": {
+        "complexity_in": [
+          "high"
+        ]
+      },
+      "profile": "native-deep",
+      "reason": "Complex implementation requires Opus."
+    },
+    {
+      "id": "cheap-mechanical",
+      "priority": 500,
+      "when": {
+        "type_in": [
+          "codemod",
+          "unit_testing"
+        ],
+        "complexity_in": [
+          "low"
+        ],
+        "risk_in": [
+          "low"
+        ]
+      },
+      "profile": "native-fast",
+      "reason": "Clear mechanical changes use Haiku."
+    },
+    {
+      "id": "default",
+      "priority": 0,
+      "when": {},
+      "profile": "native-standard",
+      "reason": "Bounded implementation and verification use Sonnet."
+    }
+  ]
+}
