@@ -7,18 +7,23 @@
   "plugins": [
     {
       "name": "learning-loop",
-      "source": "./ai-tools/plugins/learning-loop",
+      "source": "./plugins/learning-loop",
       "description": "Captures durable project lessons as confirmed rules and advisory checks."
     },
     {
       "name": "commit-changes",
-      "source": "./ai-tools/plugins/commit-changes",
+      "source": "./plugins/commit-changes",
       "description": "Reviews, cleans up, and commits working-tree changes as focused, conventionally typed commits."
     },
     {
       "name": "mission-control",
-      "source": "./ai-tools/plugins/mission-control",
+      "source": "./plugins/mission-control",
       "description": "Coordinates disciplined planning, provider-aware delegation, implementation, review, and verified recovery."
+    },
+    {
+      "name": "design-workflows",
+      "source": "./plugins/design-workflows",
+      "description": "Captures Figma evidence and prepares app-aware implementation briefs."
     }
   ]
 }

@@ -25,7 +25,7 @@ rules and checks travel with the repository and remain reviewable in its history
 Register the marketplace once from GitHub:
 
 ```sh
-claude plugin marketplace add mrgnedy/ai-tools
+claude plugin marketplace add mrgnedy/ai-mission-control
 ```
 
 A Git URL or an absolute local checkout path also works when using another source.
@@ -56,7 +56,7 @@ performed separately in every git repository that should use the learning loop.
 For local development of this marketplace, the first command looks like:
 
 ```sh
-claude plugin marketplace add /absolute/path/to/ai-tools
+claude plugin marketplace add /absolute/path/to/ai-mission-control
 ```
 
 ## Manual repository installation

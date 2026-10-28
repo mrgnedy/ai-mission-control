@@ -1,5 +1,13 @@
 # Changelog
 
+## Marketplace layout and Design Workflows 0.1.0 — 2026-10-28
+
+- Use one repository-root marketplace catalog and a root-level `plugins/` directory
+  for both GitHub installation and local development.
+- Add the independent `design-workflows` plugin with `/design-workflows:figma-intake`.
+  It captures durable Figma evidence, validates the handoff, and optionally writes
+  an app-aware brief without implementing UI.
+
 ## Mission Control 0.3.13 — 2026-10-22
 
 - Setup now discovers available project/packaged execution strategies, asks which
@@ -71,5 +79,5 @@ updating the plugin does not change repository-owned configuration or migrate ru
   project configuration unchanged, and ai-tools-native-to-ai-tools migration left
   only the main plugin enabled.
 
-See [upgrade and rollback instructions](ai-tools/plugins/mission-control/docs/UPGRADE_NATIVE.md).
+See [upgrade and rollback instructions](plugins/mission-control/docs/UPGRADE_NATIVE.md).
 This changelog begins with this release; it does not reconstruct earlier history.

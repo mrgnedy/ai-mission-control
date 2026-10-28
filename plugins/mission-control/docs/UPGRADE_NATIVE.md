@@ -168,7 +168,9 @@ claude --plugin-dir /absolute/path/to/known-good/ai-tools/plugins/mission-contro
 
 Leave `mission-control@ai-tools-native` locally disabled too if it was installed.
 The old path must contain the actual earlier plugin version, not the updated
-checkout. Restore the saved configuration only after inspecting later project
+checkout. The command above shows the old nested layout; a checkout after the
+marketplace flattening uses `plugins/mission-control` instead. Restore the saved
+configuration only after inspecting later project
 changes; preserve the current directory in another backup before replacing it.
 Validate with the old bundled executable. The old CLI must not resume native runs.
 

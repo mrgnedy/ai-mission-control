@@ -1,0 +1,8 @@
+{
+  "name": "design-workflows",
+  "description": "Turns Figma designs into verifiable evidence and app-aware implementation briefs.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Noqodi Mobile"
+  }
+}
