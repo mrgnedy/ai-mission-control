@@ -5,6 +5,11 @@ description: Review a Mission Control run's worker attempts, failures, verificat
 
 # Run retrospective
 
+Check configured/applicable procedures, frozen worker/reviewer instruction delivery, and actual
+outcomes separately; delivery is not compliance. Include payload warnings, post-acceptance parent
+edits and their rerun checks, and pending closeout. Use existing evidence; do not claim verified
+behavior or rulebook duplication from file existence. Avoid repeating an already addressed lesson.
+
 The deterministic report is evidence; your diagnosis is a hypothesis. Keep them distinct so a
 workflow improvement can be judged by whether later runs actually improve.
 Run CLI commands through `"${CLAUDE_PLUGIN_ROOT}/bin/ai-orchestrate"` so this skill uses its own

@@ -21,6 +21,15 @@
         "review": {"type": "string", "minLength": 1}
       }
     },
+    "gate_skills": {"type": "object", "additionalProperties": {
+      "type": "array", "items": {"type": "object", "additionalProperties": false,
+        "required": ["skill", "when"], "properties": {
+          "skill": {"type": "string", "minLength": 1},
+          "when": {"type": "string", "minLength": 1}
+        }}
+    }},
+    "file_skills": {"type": "object", "additionalProperties": {"type": "string", "minLength": 1}},
+    "reviewer_skills": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
     "require_requirement_traceability": {"type": "boolean"},
     "require_independent_review": {"type": "boolean"},
     "require_final_control_plane_approval": {"type": "boolean"},

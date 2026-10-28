@@ -7,9 +7,10 @@ import uuid
 from pathlib import Path
 from typing import Any, Dict, Optional, Sequence, Tuple
 
+from .bindings import build_bundle, freeze_bundle, load_run_skills, payload_report, validate_bindings
 from .configuration import configuration_snapshot, load_configuration, load_configuration_snapshot
 from .continuation import reopen_task
-from .doctor import diagnose_configured, inspect_packaged_assets
+from .doctor import diagnose_configured, inspect_bindings, inspect_packaged_assets
 from .engine import WorkflowEngine
 from .failures import ValidationError
 from .io import atomic_write_json, load_data
@@ -270,13 +271,16 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             ROOT, ["claude-native"] if native else (provider["adapter"] for provider in providers.values()),
             review=bundle["methodology"]["require_independent_review"],
         )
+        if any(bundle["methodology"].get(key) for key in ("gate_skills", "file_skills", "reviewer_skills")):
+            report["skill_bindings"] = inspect_bindings(ROOT, args.config.resolve().parents[2], bundle["methodology"])
         _print(report)
-        return 0
+        return 2 if report.get("skill_bindings", {}).get("status") == "invalid" else 0
     if args.command == "route":
         graph_path, output_path = _route_paths(args)
         _reject_native_output(output_path)
         graph = load_data(graph_path)
         validate_with_schema(graph, SCHEMAS / "task-graph.schema.json")
+        validate_bindings(bundle["methodology"], graph)
         delegation = route_graph(graph, profiles, matrix, allowed)
         atomic_write_json(output_path, delegation)
         _print({
@@ -294,7 +298,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         _validate_execution(graph, delegation, profiles, providers, allowed, decisions)
         if args.change is not None:
             _validate_pre_execution(bundle, args.change, graph, delegation, decisions)
-        _print({"status": "valid", "workflow_id": graph["workflow"]["id"], "tasks": len(graph["tasks"])})
+        validate_bindings(bundle["methodology"], graph)
+        skills = build_bundle(ROOT, args.config.resolve().parents[2], bundle["methodology"], graph)
+        report = payload_report(skills, graph)
+        _print({"status": "valid", "workflow_id": graph["workflow"]["id"], "tasks": len(graph["tasks"]),
+                **({"skill_bindings": report} if skills["skills"] else {})})
         return 0
     if args.command in {"run", "resume"}:
         if bundle["execution_strategy"].get("worker_runtime", "cli") == "claude-native":
@@ -312,6 +320,16 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         options = execution["options"]
         if args.command == "run" and args.change is not None:
             _validate_pre_execution(bundle, args.change, graph, delegation, decisions, review=options["review"])
+        validate_bindings(bundle["methodology"], graph)
+        if args.command == "run":
+            skills = build_bundle(ROOT, execution["workspace"], bundle["methodology"], graph)
+        elif (Path(execution["runtime"]) / "run.json").exists():
+            skills = load_run_skills(Path(execution["runtime"]))
+        else:
+            skills = None
+        skill_report = payload_report(skills, graph) if skills else None
+        if skills and skills["skills"] and execution.get("manifest") is None and args.command == "run":
+            raise ValidationError("file skill bindings require run --change for immutable run identity")
         if args.dry_run:
             _print({
                 "status": "dry_run",
@@ -321,17 +339,20 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 "runtime": str(execution["runtime"]),
                 "supersedes": execution.get("manifest", {}).get("supersedes"),
                 "execution_plan": delegation["execution_plan"],
+                **({"skill_bindings": skill_report} if skills and skills["skills"] else {}),
             })
             return 0
         runtime = RuntimeStore(execution["runtime"])
         if execution.get("manifest") is not None:
             if not sources_match(execution["manifest"]):
                 raise ValueError("orchestration sources changed while preparing the run; validate again")
+            if skills:
+                freeze_bundle(runtime.root, skills, execution["manifest"])
             validate_run_manifest(execution["manifest"], SCHEMAS)
             runtime.write_manifest(execution["manifest"])
             if decisions is not None:
                 atomic_write_json(runtime.root / "decisions.yaml", decisions)
-        registry = ProviderRegistry(ROOT, providers, options["provider_binaries"])
+        registry = ProviderRegistry(ROOT, providers, options["provider_binaries"], skill_bundle=skills)
         executors = registry.create_executors(allowed)
         review_profile = bundle["orchestration"]["control_plane"]["review_profile"]
         reviewer = None if not options["review"] else registry.create_reviewer(review_profile, profiles)
@@ -356,7 +377,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         )
         state = engine.run(resume=args.command == "resume", run_id=execution.get("run_id", ""))
         _report_after_stop(Path(execution["runtime"]))
-        _print(state)
+        _print({**state, **({"skill_bindings": skill_report} if skills and skills["skills"] else {})})
         return 0 if state["status"] == "completed" else 2
     if args.command == "review":
         _reject_native_output(args.output_graph)
@@ -533,6 +554,9 @@ def _validate_execution(
     validate_with_schema(graph, SCHEMAS / "task-graph.schema.json")
     validate_with_schema(delegation, SCHEMAS / "delegation.schema.json")
     validate_delegation(graph, delegation, profiles, providers, allowed)
+    for task in graph["tasks"]:
+        if task.get("skills") and providers[delegation["execution_plan"][task["id"]]["executor"]]["adapter"] == "local":
+            raise ValidationError("local command tasks cannot consume worker skill instructions")
     if decisions is not None:
         validate_with_schema(decisions, SCHEMAS / "decisions.schema.json")
     validate_decision_dependencies(graph, decisions)

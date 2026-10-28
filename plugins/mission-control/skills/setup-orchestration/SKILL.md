@@ -120,6 +120,15 @@ Keep unchanged ends the write workflow; do not interpret later inspection as per
    never edit packaged defaults, provider accounts, visible mission plans, or runtime snapshots
    as part of setup. If the user keeps strategy/models unchanged, preserve their bytes.
 
+## Skill bindings
+
+Preserve project `gate_skills`, `file_skills`, and `reviewer_skills` when merging configuration;
+strategy/model changes do not change these settings or mission task assignments. Use the actual
+destination methodology's bindings, not an assumption that it is empty. For binding-only changes,
+use `mission-control:bind-skills` instead of repeating this setup wizard.
+After first-time setup, offer once to configure skills per step; if the user already requested
+that, hand off directly. Do not repeat the offer on reconciliation/merge runs.
+
 ## Apply and validate
 
 For an explicitly chosen replacement, run:

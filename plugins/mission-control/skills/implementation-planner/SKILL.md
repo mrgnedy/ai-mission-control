@@ -20,6 +20,10 @@ decisions exist, index all of them in optional `orchestration/decisions.yaml`, i
 yet referenced by a task. Do not create an empty index as a readiness certificate.
 
 - Create one task per independently verifiable outcome, not one per architectural layer.
+- Read the selected methodology's optional `file_skills`. Assign optional `skills: [alias]` only
+  when that task needs the procedure; validate aliases and do not infer them from task titles at
+  dispatch. Workers cannot invoke parent-only skills or gain tools from an assignment. Review
+  remediation inherits the affected task's skills and frozen instructions.
 - Carry the requirement, rationale, relevant context, allowed/forbidden paths, acceptance criteria,
   dependencies, capabilities, complexity, risk, and argument-array verification commands.
 - Dependencies represent actual data or sequencing constraints. Keep independent tasks independent.

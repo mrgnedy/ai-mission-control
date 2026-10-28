@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from typing import Any, Dict, Mapping, Optional, Sequence
 
+from ..bindings import skill_payload
 from ..failures import FailureCode, WorkflowError
 from ..models import task_result
 from ..prompts import render_task_prompt
@@ -47,8 +48,10 @@ class ClaudeExecutor:
     def __init__(
         self, root: Path, binary: str = "claude", name: str = "claude",
         allowed_bash_rules: Sequence[str] = (),
+        skill_bundle: Optional[Mapping[str, Any]] = None,
     ) -> None:
         self.root = root
+        self.skill_bundle = skill_bundle
         self.binary = binary
         self.name = name
         self.allowed_bash_rules = tuple(allowed_bash_rules)
@@ -67,6 +70,7 @@ class ClaudeExecutor:
             task,
             delegation,
         )
+        prompt += skill_payload(self.skill_bundle, task.get("skills", []))
         read_only = delegation["isolation"] == "read_only"
         rules = list(dict.fromkeys([*self.allowed_bash_rules, *delegation.get("extra_allowed_bash_rules", [])]))
         if not read_only and rules:

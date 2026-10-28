@@ -16,8 +16,10 @@ class ProviderRegistry:
         root: Path,
         providers: Mapping[str, Mapping[str, Any]],
         binary_overrides: Optional[Mapping[str, str]] = None,
+        skill_bundle: Optional[Mapping[str, Any]] = None,
     ) -> None:
         self.root = root
+        self.skill_bundle = skill_bundle
         self.providers = providers
         self.binary_overrides = dict(binary_overrides or {})
         unknown = set(self.binary_overrides) - set(providers)
@@ -38,12 +40,13 @@ class ProviderRegistry:
                 executors[provider_id] = LocalExecutor(name=provider_id)
             elif adapter == "cursor-cli":
                 executors[provider_id] = CursorExecutor(
-                    self.root, binary or "cursor-agent", name=provider_id
+                    self.root, binary or "cursor-agent", name=provider_id, skill_bundle=self.skill_bundle
                 )
             elif adapter == "claude-cli":
                 executors[provider_id] = ClaudeExecutor(
                     self.root, binary or "claude", name=provider_id,
                     allowed_bash_rules=manifest.get("allowed_bash_rules", []),
+                    skill_bundle=self.skill_bundle,
                 )
             else:
                 raise WorkflowError(
@@ -70,6 +73,7 @@ class ProviderRegistry:
             model=profile.get("model") or "opus",
             effort=profile.get("effort") or "",
             timeout_seconds=profile["timeout_seconds"],
+            skill_bundle=self.skill_bundle,
         )
 
     def binaries(self) -> Dict[str, Optional[str]]:

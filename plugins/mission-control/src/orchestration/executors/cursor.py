@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from typing import Any, Dict, Mapping, Optional
 
+from ..bindings import skill_payload
 from ..failures import FailureCode, WorkflowError
 from ..models import task_result
 from ..prompts import render_task_prompt
@@ -12,8 +13,10 @@ from .base import parse_worker_response, run_process
 
 
 class CursorExecutor:
-    def __init__(self, root: Path, binary: str = "cursor-agent", name: str = "cursor") -> None:
+    def __init__(self, root: Path, binary: str = "cursor-agent", name: str = "cursor",
+                 skill_bundle: Optional[Mapping[str, Any]] = None) -> None:
         self.root = root
+        self.skill_bundle = skill_bundle
         self.binary = binary
         self.name = name
 
@@ -31,6 +34,7 @@ class CursorExecutor:
             task,
             delegation,
         )
+        prompt += skill_payload(self.skill_bundle, task.get("skills", []))
         command = [
             self.binary,
             "-p",

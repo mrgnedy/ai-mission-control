@@ -32,6 +32,7 @@
       "items": {"type": "array", "items": {"type": "string", "minLength": 1}, "minItems": 1}
     },
     "requested_profile": {"type": "string"},
+    "skills": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
     "metadata": {"type": "object"}
   }
 }

@@ -50,6 +50,7 @@
         "delegation"
       ],
       "properties": {
+        "skills": {"$ref": "run-source.schema.json"},
         "task_graph": {
           "$ref": "run-source.schema.json"
         },

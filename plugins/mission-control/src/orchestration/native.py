@@ -14,6 +14,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterator
 
+from .bindings import build_bundle, freeze_bundle, load_run_skills, payload_report, skill_payload
 from .budget import effective_parallel_limit, enforce_expensive_budget
 from .configuration import configuration_snapshot, load_configuration_snapshot
 from .continuation import task_continuation_context, task_decision_context
@@ -266,12 +267,18 @@ def start_session(root: Path, bundle: dict, execution: dict) -> dict:
     with native_transaction(runtime, workspace):
         if _session_path(runtime).exists():
             session, _, _, _, _ = _load(root, runtime)
-            if load_data(runtime.manifest_path) != manifest or load_data(runtime.configuration_path) != configuration_snapshot(bundle):
+            saved_manifest = load_data(runtime.manifest_path)
+            if "skills" in saved_manifest["sources"]:
+                manifest["sources"]["skills"] = saved_manifest["sources"]["skills"]
+            if saved_manifest != manifest or load_data(runtime.configuration_path) != configuration_snapshot(bundle):
                 raise ValueError("existing native session inputs differ")
             return _public(runtime, session)
         if runtime.state_path.exists() or runtime.manifest_path.exists():
             raise ValueError("runtime already belongs to another run; native start refuses replacement")
         _other_owners(workspace, runtime)
+        skills = build_bundle(root, workspace, bundle["methodology"], graph)
+        skill_report = payload_report(skills, graph)
+        freeze_bundle(runtime.root, skills, manifest)
         runtime.write_manifest(manifest)
         runtime.write_inputs(graph, delegation)
         runtime.write_configuration(configuration_snapshot(bundle))
@@ -283,7 +290,10 @@ def start_session(root: Path, bundle: dict, execution: dict) -> dict:
         runtime.write_state(create_state(graph, manifest["run_id"]), graph)
         _save(runtime, session)
         runtime.event_log(manifest["run_id"]).emit("native_session_started")
-        return _public(runtime, session)
+        result = _public(runtime, session)
+        if skills["skills"]:
+            result["skill_bindings"] = skill_report
+        return result
 
 
 def _ticket(claim: dict, *, launch_allowed: bool) -> dict:
@@ -359,6 +369,7 @@ def claim_task(root: Path, runtime: RuntimeStore, task_id: str) -> dict:
             "The main session supplies actual returned Agent identity and terminal evidence.\n"
             + json.dumps({key: claim[key] for key in ("claim_id", "run_id", "task_id", "attempt", "task", "route", "workspace")}, indent=2)
         )
+        claim["prompt"] += skill_payload(load_run_skills(runtime.root), task.get("skills", []))
         session["claims"][claim_id] = claim
         _save(runtime, session)  # Durable before the parent can launch the Agent.
         transition(state, task_id, "running")
@@ -600,6 +611,8 @@ def session_review(root: Path, runtime: RuntimeStore, submission: dict | None = 
                 "claim_id": claim_id, "graph": graph,
                 "results": [load_data(Path(item["result_file"])) for item in state["tasks"].values()],
             }, indent=2)
+            skills = load_run_skills(runtime.root)
+            claim["prompt"] += skill_payload(skills, (skills or {}).get("reviewer_skills", []))
             session["claims"][claim_id] = claim
             session["review_claim_id"] = claim_id
             _save(runtime, session)

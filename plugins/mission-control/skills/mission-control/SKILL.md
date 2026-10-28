@@ -77,6 +77,38 @@ must preserve every gate and contract required by the selected methodology. Chan
 never transfers governance. Add only the manifest and small adapter needed by a real provider—do
 not introduce dynamic imports, arbitrary plugin loading, or duplicated workflow logic.
 
+## Configured step procedures
+
+Read optional `gate_skills`, `file_skills`, and `reviewer_skills` in the selected methodology.
+At each parent gate, invoke applicable `gate_skills[gate]` entries in order using the session's
+actual Skill tool. Judge free-text `when` from evidence. Record one line in the existing spec/plan/
+tasks record: skill, applied or not and why, outcome. Integrate the artifact it produces instead of
+authoring it twice, then apply every existing readiness/decision/acceptance check. Parent procedures
+before execution must be compatible with artifact-only mutations; after interruption inspect those
+artifacts rather than inventing completed work. Parent skill versions are not frozen.
+
+Workers receive only explicitly assigned `task.skills`; the runtime freezes their file guidance
+and reviewer supplements once in `skills.json`. Local Markdown references are included; tools,
+permissions, routing, budgets and scope remain unchanged. Preflight warns once per distinct large
+payload; mandatory rules must not be shortened to clear the warning. Use `bind-skills` for changes.
+
+Closure bindings run only after required verification, independent review and parent acceptance,
+with all workers stopped. Failed/blocked/interrupted stops still require retrospective reporting,
+but do not run successful-closure procedures. Before repeating a side effect such as a commit,
+inspect Git status/history and existing closeout evidence; preserve unrelated dirty work. Bindings
+do not authorize commits, pushes, installations or publication by themselves.
+
+At accepted closeout, permit only demonstrably non-behavioral changes within authorized scope,
+such as ordinary comments or whitespace. Any edit needs existing user authority unless covered
+by an explicitly documented and authorized narrow cleanup procedure. Debug logging is judged by
+actual behavior: preserve argument side effects and required observability. Rerun the declared
+checks of affected tasks on the final tree, then record one line in `tasks.md`: post-acceptance
+edit by parent, what/why, checks and result. Do not attribute these edits to the earlier independent
+review. Behavioral fixes (mocks/stubs, config, hardcoded values, disabled tests) require tracked
+remediation or a new mission and independent review; leave affected files uncommitted. Never
+commit a leaked secret. A failed check means pending closeout, not hidden history rewriting or a
+rerun of already accepted workers. Closeout status and historical run acceptance remain distinct.
+
 ## Gates
 
 1. **Intake and clarify.** Preserve the request's meaning and identify independently verifiable

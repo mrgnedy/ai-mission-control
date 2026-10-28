@@ -6,6 +6,7 @@ import re
 from pathlib import Path
 from typing import Any, Dict, Mapping, Protocol, Sequence, Tuple
 
+from .bindings import skill_payload
 from .failures import FailureCode, WorkflowError
 from .executors.base import run_process
 from .io import load_data
@@ -32,8 +33,10 @@ class ClaudeReviewRunner:
         model: str = "opus",
         effort: str = "",
         timeout_seconds: int = 2400,
+        skill_bundle: Mapping[str, Any] | None = None,
     ) -> None:
         self.root = root
+        self.skill_bundle = skill_bundle
         self.binary = binary
         self.model = model
         self.effort = effort
@@ -50,6 +53,7 @@ class ClaudeReviewRunner:
         prompt = template.replace("{{workflow_objective}}", graph["workflow"]["objective"])
         prompt = prompt.replace("{{task_graph}}", json.dumps(graph, indent=2, sort_keys=True))
         prompt = prompt.replace("{{results}}", json.dumps(list(results), indent=2, sort_keys=True))
+        prompt += skill_payload(self.skill_bundle, (self.skill_bundle or {}).get("reviewer_skills", []))
         schema = load_data(self.root / ".ai/orchestration/schemas/review.schema.json")
         command = [
             self.binary,
@@ -172,6 +176,7 @@ def apply_review(
                 "complexity": "medium" if issue["severity"] in {"low", "medium"} else "high",
                 "risk": "medium" if issue["severity"] in {"low", "medium"} else "high",
                 "verification": copy.deepcopy(source["verification"]),
+                **({"skills": copy.deepcopy(source["skills"])} if "skills" in source else {}),
             }
         )
         existing.add(task_id)

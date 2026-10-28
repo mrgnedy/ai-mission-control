@@ -200,6 +200,21 @@ def build_report(runtime: Path, state: Mapping[str, Any], graph: Mapping[str, An
         )
     if not reviews and not revisions and not grants and not reopens and not draft_paths:
         lines.append("No review, recovery draft, route revision, or permission grant was recorded.")
+    if manifest.get("sources", {}).get("skills"):
+        from .bindings import load_run_skills, payload_report
+        skills = load_run_skills(runtime)
+        delivery = payload_report(skills, graph)
+        lines.extend(["", "## Frozen skill assignments", "",
+                      "These are frozen instructions assigned to workers/reviewer, not proof of semantic compliance. "
+                      "Parent applicability and post-acceptance edits belong in the authored closeout record."])
+        for task in graph["tasks"]:
+            if task.get("skills"):
+                lines.append(f"- `{_inline(task['id'])}`: {_inline(', '.join(task['skills']))}.")
+        if skills["reviewer_skills"]:
+            lines.append(f"- Independent review: {_inline(', '.join(skills['reviewer_skills']))}.")
+        for warning in delivery["warnings"]:
+            lines.append(f"- Extra guidance: {warning['bytes']} UTF-8 bytes for {_inline(', '.join(warning['uses']))}; "
+                         "above the preflight warning threshold. This is not a measured token cost.")
     lines.extend([
         "",
         "## Orchestrator interpretation",

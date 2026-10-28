@@ -5,6 +5,7 @@ import re
 from pathlib import Path
 from typing import Any, Dict, Mapping
 
+from .bindings import validate_bindings
 from .failures import ValidationError
 from .io import load_data
 from .json_schema import validate_with_schema
@@ -87,6 +88,7 @@ def validate_configuration_bundle(bundle: Any, schemas: Path) -> None:
     if bundle["execution_strategy"]["id"] != bundle["orchestration"]["execution_strategy"]:
         raise ValidationError("selected execution strategy id does not match its manifest")
 
+    validate_bindings(bundle["methodology"])
     providers = bundle["providers"]
     if not isinstance(providers, Mapping) or not providers:
         raise ValidationError("configuration requires at least one provider")

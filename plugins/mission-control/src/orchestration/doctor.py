@@ -7,6 +7,19 @@ import subprocess
 from pathlib import Path
 from typing import Any, Dict, Iterable, Mapping, Optional
 
+from .bindings import build_bundle, payload_report
+from .failures import ValidationError
+
+
+def inspect_bindings(root: Path, workspace: Path, methodology: Mapping[str, Any]) -> dict:
+    """Static file/payload diagnostics, not semantic compatibility certification."""
+    try:
+        return {"status": "valid", **payload_report(build_bundle(root, workspace, methodology)),
+                "parent_gate_skills": methodology.get("gate_skills", {}),
+                "parent_availability": "requires_live_session"}
+    except (ValidationError, OSError, UnicodeError, ValueError) as error:
+        return {"status": "invalid", "error": str(error)}
+
 
 def inspect_packaged_assets(root: Path, adapters: Iterable[str], *, review: bool) -> Dict[str, Any]:
     """Check only assets needed by the selected worker adapters and review mode."""
